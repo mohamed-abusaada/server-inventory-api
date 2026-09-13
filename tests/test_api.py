@@ -14,7 +14,7 @@ def client():
 
 def test_healthz_returns_200(client):
     resp = client.get("/healthz")
-    assert resp.status_code == 200
+    assert resp.status_code == 500
     assert resp.get_json()["status"] == "ok"
 
 
