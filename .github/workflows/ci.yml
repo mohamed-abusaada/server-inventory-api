@@ -1,19 +1,16 @@
-name: CI
+name: CI Workflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         python-version: ['3.11', '3.12']
 
@@ -36,14 +33,14 @@ jobs:
         run: flake8 .
 
       - name: Run tests
-        run: pytest -q --junitxml=report.xml
+        run: pytest --junitxml=test-results-${{ matrix.python-version }}.xml
 
-      - name: Upload test report
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report-${{ matrix.python-version }}
-          path: report.xml
+          name: pytest-results-${{ matrix.python-version }}
+          path: test-results-${{ matrix.python-version }}.xml
 
   smoke:
     needs: test
@@ -65,6 +62,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Start the API
+        env:
+          APP_VERSION: ci-${{ github.run_number }}
         run: |
           python app.py &
           sleep 5
@@ -80,3 +79,10 @@ jobs:
           response=$(curl -s http://127.0.0.1:5000/readyz)
           echo "Readyz response: $response"
           echo "$response" | grep '"servers_loaded":9'
+
+      - name: Test /version endpoint
+        run: |
+          expected_version="ci-${{ github.run_number }}"
+          response=$(curl -s http://127.0.0.1:5000/version)
+          echo "Version response: $response"
+          echo "$response" | grep "$expected_version"
