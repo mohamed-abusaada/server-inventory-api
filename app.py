@@ -77,7 +77,7 @@ def get_server(name):
 def stats():
     data = summarize(SERVERS)
     data["unhealthy"] = unhealthy(SERVERS)
-    return jsonify(data), 200
+    return jsonify(data), 500
 
 
 if __name__ == "__main__":
